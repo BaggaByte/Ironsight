@@ -138,8 +138,8 @@ export default function ScanDetailPage() {
   const router = useRouter();
   const scanId = params?.id;
   const token = Cookies.get("token");
-  const [scan, setScan] = useState<Record<string, unknown> | null>(null);
-  const [response, setResponse] = useState<Record<string, unknown> | null>(null);
+  const [scan, setScan] = useState<any>(null);
+  const [response, setResponse] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"findings" | "remediation" | "script" | "ticket">("findings");
   const [loading, setLoading] = useState(true);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -162,7 +162,7 @@ export default function ScanDetailPage() {
         const eventSource = new EventSource(`/api/scans/${scanId}/stream`);
         eventSource.onmessage = (event) => {
           const update = JSON.parse(event.data);
-          setScan(prev => {
+          setScan((prev: any) => {
             if (!prev) return prev;
             return {
               ...prev,
@@ -251,7 +251,7 @@ export default function ScanDetailPage() {
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Target</div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>
-              {scan.target}
+              {String(scan.target)}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--accent-primary)", background: "rgba(240,78,35,0.08)", padding: "4px 12px", borderRadius: 20, border: "1px solid rgba(240,78,35,0.2)" }}>

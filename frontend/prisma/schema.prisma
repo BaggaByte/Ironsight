@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+
+  @@map("organizations")
+}
+
+model User {
+  id              Int          @id @default(autoincrement())
+  email           String       @unique
+  hashed_password String
+  role            String       @default("user")
+  organization_id Int
+  organization    Organization @relation(fields: [organization_id], references: [id])
+
+  @@map("users")
+}
+
+model Target {
+  id         Int       @id @default(autoincrement())
+  hostname   String    @unique
+  created_at DateTime  @default(now())
+  scans      Scan[]
+  findings   Finding[]
+
+  @@map("targets")
+}
+
+enum ScanStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Scan {
+  id         Int        @id @default(autoincrement())
+  target_id  Int
+  status     ScanStatus @default(PENDING)
+  start_time DateTime   @default(now())
+  end_time   DateTime?
+  target     Target     @relation(fields: [target_id], references: [id])
+  findings   Finding[]
+
+  @@map("scans")
+}
+
+model Vulnerability {
+  id          Int       @id @default(autoincrement())
+  cve_id      String?   @unique
+  severity    String?
+  description String?
+  findings    Finding[]
+
+  @@map("vulnerabilities")
+}
+
+model Finding {
+  id               Int           @id @default(autoincrement())
+  target_id        Int
+  scan_id          Int
+  vulnerability_id Int
+  details          String?
+  target           Target        @relation(fields: [target_id], references: [id])
+  scan             Scan          @relation(fields: [scan_id], references: [id])
+  vulnerability    Vulnerability @relation(fields: [vulnerability_id], references: [id])
+
+  @@map("findings")
+}
+
+model Mission {
+  id           Int      @id @default(autoincrement())
+  mission_id   String   @unique
+  target       String
+  goal         String
+  scan_count   Int      @default(0)
+  created_at   DateTime @default(now())
+  decision_log Json?
+  scans        Json?
+
+  @@map("missions")
+}
+
+model Asset {
+  id              Int      @id @default(autoincrement())
+  asset_id        String   @unique
+  target          String
+  asset_type      String
+  scan_count      Int      @default(0)
+  last_risk_score String
+  discovered_at   DateTime @default(now())
+
+  @@map("assets")
+}
+
+model Schedule {
+  id              Int      @id @default(autoincrement())
+  schedule_id     String   @unique
+  target          String
+  tool            String
+  cron_expression String
+  next_run        DateTime
+
+  @@map("schedules")
+}

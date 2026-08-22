@@ -39,7 +39,18 @@ def test_run_recon_scan_success(mock_subprocess, mock_session_local, mock_db):
     task_mock = MagicMock()
     task_mock.retry = MagicMock()
     
-    result = run_recon_scan(1, "test.com")
+    with patch('worker.run_groq_chat') as mock_run_groq_chat, \
+         patch('worker.get_opensearch_client') as mock_os, \
+         patch('worker.get_minio_client') as mock_minio, \
+         patch('worker.get_neo4j_driver') as mock_neo4j:
+        
+        mock_run_groq_chat.return_value = "Mocked AI Response"
+        
+        mock_os.return_value = MagicMock()
+        mock_minio.return_value = MagicMock()
+        mock_neo4j.return_value = MagicMock()
+        
+        result = run_recon_scan(1, "test.com")
     
     assert result == True
     mock_subprocess.assert_called_once()

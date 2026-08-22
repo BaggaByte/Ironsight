@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
-import { store } from '@/app/api/_store';
+import { prisma } from '@/lib/db';
 
 export async function GET() {
-  return NextResponse.json(store.missions);
+  try {
+    const missions = await prisma.mission.findMany({
+      orderBy: { created_at: 'desc' }
+    });
+    return NextResponse.json(missions);
+  } catch (error) {
+    console.error("Failed to fetch missions:", error);
+    return NextResponse.json({ error: "Failed to fetch missions" }, { status: 500 });
+  }
 }
+

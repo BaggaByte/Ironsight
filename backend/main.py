@@ -193,3 +193,14 @@ def get_analytics(db: Session = Depends(database.get_db)):
         "criticalVulns": critical_findings,
         "playbooks": 0  # Populated by Aegis AI service
     }
+
+@app.get("/reports/{scan_id}")
+def get_grc_report(scan_id: int):
+    """
+    Generate a GRC-style compliance report for a given scan.
+    """
+    from report_generator import generate_grc_report
+    report = generate_grc_report(scan_id)
+    if "error" in report:
+        raise HTTPException(status_code=404, detail=report["error"])
+    return report

@@ -1,22 +1,59 @@
 import { NextResponse } from 'next/server';
-import { store } from '@/app/api/_store';
+import { prisma } from '@/lib/db';
+import { signToken } from '@/lib/auth';
+import * as bcrypt from 'bcrypt';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
-    if (body.email) store.currentUser.email = body.email;
-    if (body.org_name) store.currentUser.org_name = body.org_name;
-    if (body.first_name) store.currentUser.first_name = body.first_name;
-    if (body.last_name) store.currentUser.last_name = body.last_name;
-    if (body.job_title) store.currentUser.job_title = body.job_title;
+    const body = await request.json();
+    const { email, password, org_name } = body;
+
+    if (!email || !password || !org_name) {
+      return NextResponse.json({ detail: "Email, password, and org_name are required" }, { status: 400 });
+    }
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return NextResponse.json({ detail: "Email already registered" }, { status: 400 });
+    }
+
+    // Find or create organization
+    let org = await prisma.organization.findUnique({ where: { name: org_name } });
+    if (!org) {
+      org = await prisma.organization.create({ data: { name: org_name } });
+    }
+
+    // Hash password
+    const hashed_password = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        hashed_password,
+        organization_id: org.id,
+        role: "user" // Default role
+      },
+      include: { organization: true }
+    });
+
+    const token = await signToken({
+      id: user.id,
+      email: user.email,
+      role: user.role
+    });
+
+    const { hashed_password: _, ...safeUser } = user;
 
     return NextResponse.json({
-      access_token: "sentinel_jwt_token_" + Date.now(),
+      access_token: token,
       token_type: "bearer",
-      user: store.currentUser,
+      user: safeUser,
     });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "Registration failed";
-    return NextResponse.json({ detail: msg }, { status: 400 });
+    console.error("Registration error:", error);
+    return NextResponse.json({ detail: "Internal server error" }, { status: 500 });
   }
 }
+
