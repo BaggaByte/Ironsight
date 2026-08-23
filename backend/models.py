@@ -36,8 +36,10 @@ class Target(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     hostname = Column(String, unique=True, index=True, nullable=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+    organization = relationship("Organization")
     scans = relationship("Scan", back_populates="target")
     findings = relationship("Finding", back_populates="target")
 
@@ -46,10 +48,12 @@ class Scan(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     target_id = Column(Integer, ForeignKey("targets.id"))
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     status = Column(Enum(ScanStatus), default=ScanStatus.PENDING)
     start_time = Column(DateTime, default=datetime.datetime.utcnow)
     end_time = Column(DateTime, nullable=True)
 
+    organization = relationship("Organization")
     target = relationship("Target", back_populates="scans")
     findings = relationship("Finding", back_populates="scan")
 
@@ -69,9 +73,11 @@ class Finding(Base):
     id = Column(Integer, primary_key=True, index=True)
     target_id = Column(Integer, ForeignKey("targets.id"))
     scan_id = Column(Integer, ForeignKey("scans.id"))
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     vulnerability_id = Column(Integer, ForeignKey("vulnerabilities.id"))
     details = Column(String, nullable=True)
 
+    organization = relationship("Organization")
     target = relationship("Target", back_populates="findings")
     scan = relationship("Scan", back_populates="findings")
     vulnerability = relationship("Vulnerability", back_populates="findings")

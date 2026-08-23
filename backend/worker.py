@@ -242,23 +242,12 @@ def run_recon_scan(self, scan_id: int, hostname: str):
                         MERGE (s:Network_Segment {name: 'Corporate DMZ'})
                         MERGE (v:Vulnerability {cve_id: $cve_id})
                         SET v.severity = $severity
-                        MERGE (a:Threat_Actor {name: 'APT-29'})
-                        MERGE (r:User_Role {name: 'Domain Admin'})
                         
                         MERGE (t)-[ho:HOSTED_ON]->(s)
                         SET ho.last_seen = $timestamp
                         
                         MERGE (t)-[hv:HAS_VULNERABILITY]->(v)
                         SET hv.last_seen = $timestamp
-                        
-                        MERGE (v)-[ce:CAN_EXPLOIT]->(a)
-                        SET ce.last_seen = $timestamp
-                        
-                        MERGE (a)-[ha:HAS_ACCESS]->(r)
-                        SET ha.last_seen = $timestamp
-                        
-                        MERGE (r)-[ca:CAN_ACCESS]->(s)
-                        SET ca.last_seen = $timestamp
                         """,
                         hostname=hostname,
                         cve_id=vuln.cve_id,

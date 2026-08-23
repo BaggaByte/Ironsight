@@ -5,6 +5,11 @@ import random
 import datetime
 from opensearchpy import OpenSearch
 
+print("="*80)
+print("WARNING: This script generates SYNTHETIC/FICTIONAL data for UI demonstrations.")
+print("It is NOT connected to any real sensors or threat feeds.")
+print("="*80)
+
 # OpenSearch Configuration
 OPENSEARCH_URL = os.environ.get("OPENSEARCH_URL", "http://localhost:9200")
 INDEX_NAME = "sentinel-telemetry"

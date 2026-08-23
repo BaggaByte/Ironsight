@@ -20,23 +20,23 @@ class TestSecretKeyHardening:
         import sys
 
         # Remove the module if already cached so we get a fresh import
-        if 'auth' in sys.modules:
-            del sys.modules['auth']
+        import auth
+        import importlib
 
         # Ensure SECRET_KEY is NOT in env
         env_without_key = {k: v for k, v in os.environ.items() if k != 'SECRET_KEY'}
         with patch.dict(os.environ, env_without_key, clear=True):
             with pytest.raises(KeyError):
-                import auth  # noqa: F401
+                importlib.reload(auth)
 
     def test_secret_key_used_when_present(self):
         """auth.py loads cleanly when SECRET_KEY is set."""
         import sys
-        if 'auth' in sys.modules:
-            del sys.modules['auth']
+        import auth
+        import importlib
 
         with patch.dict(os.environ, {'SECRET_KEY': 'a' * 64}, clear=False):
-            import auth  # noqa: F401
+            importlib.reload(auth)
             assert auth.SECRET_KEY == 'a' * 64
 
     def test_no_hardcoded_fallback_in_source(self):
@@ -126,8 +126,8 @@ class TestTokenGeneration:
     def test_token_round_trip(self):
         """A token created by create_access_token can be decoded by get_current_user."""
         import sys
-        if 'auth' in sys.modules:
-            del sys.modules['auth']
+        import auth
+        import importlib
 
         with patch.dict(os.environ, {'SECRET_KEY': 'a' * 64}):
             import auth

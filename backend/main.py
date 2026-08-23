@@ -61,11 +61,13 @@ def register(body: RegisterRequest, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     org = db.query(models.Organization).filter(models.Organization.name == body.org_name).first()
-    if not org:
-        org = models.Organization(name=body.org_name)
-        db.add(org)
-        db.commit()
-        db.refresh(org)
+    if org:
+        raise HTTPException(status_code=400, detail="Organization already exists. Contact your administrator for an invite.")
+        
+    org = models.Organization(name=body.org_name)
+    db.add(org)
+    db.commit()
+    db.refresh(org)
     
     new_user = models.User(
         email=body.email,
@@ -84,11 +86,11 @@ def login(body: LoginRequest, db: Session = Depends(database.get_db)):
     if not user or not auth.verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = auth.create_access_token({"id": user.id, "email": user.email, "role": user.role})
+    token = auth.create_access_token({"id": user.id, "email": user.email, "role": user.role, "organization_id": user.organization_id})
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "role": user.role}
+        "user": {"id": user.id, "email": user.email, "role": user.role, "organization_id": user.organization_id}
     }
 
 @app.post("/orchestrate")
@@ -147,13 +149,13 @@ class ReconRequest(BaseModel):
 @app.post("/recon")
 def trigger_recon(body: ReconRequest, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
     import uuid
-    target = db.query(models.Target).filter(models.Target.hostname == body.target).first()
+    target = db.query(models.Target).filter(models.Target.hostname == body.target, models.Target.organization_id == user["organization_id"]).first()
     if not target:
-        target = models.Target(hostname=body.target)
+        target = models.Target(hostname=body.target, organization_id=user["organization_id"])
         db.add(target)
         db.commit()
         db.refresh(target)
-    db_scan = models.Scan(target_id=target.id, status=models.ScanStatus.PENDING)
+    db_scan = models.Scan(target_id=target.id, organization_id=user["organization_id"], status=models.ScanStatus.PENDING)
     db.add(db_scan)
     db.commit()
     db.refresh(db_scan)
@@ -162,7 +164,7 @@ def trigger_recon(body: ReconRequest, db: Session = Depends(database.get_db), us
 
 @app.get("/assets")
 def get_assets(db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
-    targets = db.query(models.Target).all()
+    targets = db.query(models.Target).filter(models.Target.organization_id == user["organization_id"]).all()
     return [{"asset_id": str(t.id), "target": t.hostname, "asset_type": "hostname", "scan_count": len(t.scans)} for t in targets]
 
 @app.get("/missions")
@@ -183,10 +185,10 @@ def health_check():
 
 @app.post("/targets/", response_model=TargetResponse, status_code=201)
 def create_target(body: TargetCreate, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
-    existing = db.query(models.Target).filter(models.Target.hostname == body.hostname).first()
+    existing = db.query(models.Target).filter(models.Target.hostname == body.hostname, models.Target.organization_id == user["organization_id"]).first()
     if existing:
         raise HTTPException(status_code=409, detail="Target already exists")
-    db_target = models.Target(hostname=body.hostname)
+    db_target = models.Target(hostname=body.hostname, organization_id=user["organization_id"])
     db.add(db_target)
     db.commit()
     db.refresh(db_target)
@@ -194,16 +196,16 @@ def create_target(body: TargetCreate, db: Session = Depends(database.get_db), us
 
 @app.get("/targets/", response_model=List[dict])
 def read_targets(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
-    targets = db.query(models.Target).offset(skip).limit(limit).all()
+    targets = db.query(models.Target).filter(models.Target.organization_id == user["organization_id"]).offset(skip).limit(limit).all()
     return [{"id": t.id, "hostname": t.hostname} for t in targets]
 
 @app.post("/scans/", response_model=ScanResponse, status_code=202)
 def trigger_scan(body: ScanCreate, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
-    target = db.query(models.Target).filter(models.Target.id == body.target_id).first()
+    target = db.query(models.Target).filter(models.Target.id == body.target_id, models.Target.organization_id == user["organization_id"]).first()
     if not target:
         raise HTTPException(status_code=404, detail="Target not found")
     
-    db_scan = models.Scan(target_id=target.id, status=models.ScanStatus.PENDING)
+    db_scan = models.Scan(target_id=target.id, organization_id=user["organization_id"], status=models.ScanStatus.PENDING)
     db.add(db_scan)
     db.commit()
     db.refresh(db_scan)
@@ -215,7 +217,7 @@ def trigger_scan(body: ScanCreate, db: Session = Depends(database.get_db), user:
 
 @app.get("/scans/", response_model=List[dict])
 def list_scans(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
-    scans = db.query(models.Scan).offset(skip).limit(limit).all()
+    scans = db.query(models.Scan).filter(models.Scan.organization_id == user["organization_id"]).offset(skip).limit(limit).all()
     return [{
         "id": scan.id, 
         "target_id": scan.target_id, 
@@ -228,7 +230,7 @@ def list_scans(skip: int = 0, limit: int = 100, db: Session = Depends(database.g
 
 @app.get("/scans/{scan_id}")
 def get_scan(scan_id: int, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
-    scan = db.query(models.Scan).filter(models.Scan.id == scan_id).first()
+    scan = db.query(models.Scan).filter(models.Scan.id == scan_id, models.Scan.organization_id == user["organization_id"]).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
     return {

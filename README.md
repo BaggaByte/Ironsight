@@ -38,7 +38,7 @@ It consists of three specialized AI engines working in tandem:
 
 ### 📊 Observability & Audit Trails
 - **S3 Evidence Vault**: MinIO seamlessly archives raw scan logs, report artifacts, and compliance evidence.
-- **OpenSearch Indexing**: Direct ingestion of finding events for full-text search, threat hunting, and compliance auditing.
+- **OpenSearch Indexing**: Direct ingestion of finding events for full-text search, threat hunting, and compliance auditing. *(Note: You can populate the dashboard with synthetic sample data using `python scripts/demo_telemetry.py` for evaluation purposes).*
 
 ---
 

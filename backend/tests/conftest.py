@@ -30,6 +30,12 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 def db_session():
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
+    
+    # Create default organization for tests
+    org = models.Organization(id=1, name="Test Org")
+    session.add(org)
+    session.commit()
+    
     yield session
     session.close()
     Base.metadata.drop_all(bind=engine)
@@ -42,12 +48,12 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
     
     from auth import get_current_user
-    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "email": "admin@ironsight.ai", "role": "admin"}
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "email": "admin@ironsight.ai", "role": "admin", "organization_id": 1}
     
-    with TestClient(app) as c:
-        from auth import create_access_token
-        token = create_access_token({"sub": "admin@ironsight.ai", "role": "admin"})
-        c.headers.update({"Authorization": f"Bearer {token}"})
+    from auth import create_access_token
+    token = create_access_token({"id": 1, "email": "admin@ironsight.ai", "role": "admin", "organization_id": 1})
+    
+    with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as c:
         yield c
     app.dependency_overrides.clear()
 
