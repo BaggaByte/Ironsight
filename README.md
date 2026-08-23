@@ -1,4 +1,4 @@
-# SentinelAI — Autonomous AI Security Operations Center & Threat Intelligence
+# 🛡️ Ironsight — Autonomous AI Security Operations Center & Threat Intelligence
 
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -6,42 +6,47 @@
 [![ChromaDB](https://img.shields.io/badge/Vector_DB-ChromaDB-blueviolet?style=for-the-badge)](https://www.trychroma.com/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20pgvector-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 [![Neo4j](https://img.shields.io/badge/Graph_DB-Neo4j%205-008CC1?style=for-the-badge&logo=neo4j)](https://neo4j.com/)
-[![Celery](https://img.shields.io/badge/Async-Celery%20%2B%20Redis-379C00?style=for-the-badge&logo=celery)](https://docs.celeryq.dev/)
 [![Docker](https://img.shields.io/badge/Deployment-Docker%20Compose-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-**SentinelAI** (Cyber Sentinel) is an enterprise-grade, autonomous AI Security Operations Center (SOC) and Threat Intelligence Platform. It combines real-time attack surface discovery, background vulnerability scanning, RAG-powered AI security advisory (**Aegis AI**), interactive graph threat modeling (**Neo4j**), S3 evidence storage, and full-stack observability (**Prometheus, Grafana, OpenSearch, Loki**).
+**Ironsight** is an enterprise-grade, autonomous AI Security Operations Center (SOC) and Threat Intelligence Platform. Designed for modern infrastructure, it unifies real-time attack surface discovery, autonomous vulnerability scanning, and AI-driven remediation into a single, cohesive command center.
+
+It consists of three specialized AI engines working in tandem:
+1. **Ironsight SOC**: The core attack surface mapping and vulnerability orchestration engine.
+2. **Aegis AI**: A local, RAG-powered security advisory engine that analyzes vulnerabilities and synthesizes actionable remediation playbooks.
+3. **Praxis GRC**: The enterprise governance, risk, and compliance command center.
 
 ---
 
-## 💡 Key Features
+## ✨ Core Capabilities
 
-### 🛡️ Autonomous Attack Surface & Recon Scanning
-- **Target Management**: Add and monitor internal and external hostnames, IPs, and cloud assets.
-- **Asynchronous Recon Tasks**: Celery-powered background workers trigger automated scanning jobs (e.g. port enumeration, vulnerability detection).
-- **Scheduled Automation**: Integrated Celery Beat scheduler for automated continuous scanning routines.
+### 🛡️ Autonomous Attack Surface Reconnaissance
+- **Agentic Orchestration**: Automatically dispatch scanning tools (Nmap, Nuclei, etc.) via Celery background workers.
+- **Continuous Monitoring**: Define targets and let Ironsight continuously monitor ports, services, and live CVEs in the background.
 
-### 🤖 Aegis AI — RAG-Powered Threat Remediation
-- **Contextual Security Advisor**: Integrates **Groq LLM** (`mixtral-8x7b-32768`) to analyze vulnerabilities and synthesize actionable remediation playbooks.
-- **Historical Remediation Memory**: Powered by **ChromaDB** vector storage to store, recall, and learn from past security findings and successful remediation strategies.
+### 🧠 Aegis AI — RAG-Powered Remediation
+- **Contextual Playbooks**: Integrates cutting-edge LLMs to analyze finding output and generate step-by-step remediation scripts.
+- **Threat Memory**: Powered by ChromaDB vector storage, Aegis recalls past findings and learns from historical remediation successes.
 
-### 🕸️ Graph Attack Surface & Threat Topology
-- **Interactive Neo4j Cyber Graph**: Map asset relationships, target-to-vulnerability linkages (`(Target)-[:HAS_VULNERABILITY]->(Vulnerability)`), and blast radius paths in real time.
-- **Visual Node Analytics**: Dynamically query and inspect target vulnerability networks to prioritize remediation efforts.
+### 🕸️ Graph Attack Surface Topology
+- **Interactive Threat Modeling**: Leverages Neo4j to map complex asset relationships and target-to-vulnerability linkages (`(Target)-[:HAS_VULNERABILITY]->(Vulnerability)`).
+- **Blast Radius Analysis**: Dynamically query and visualize network topologies to prioritize remediation based on true risk.
 
-### 📦 S3 Evidence Storage & Search Indexing
-- **MinIO Object Vault**: Automatically archives raw scan logs, report artifacts (`scan_<id>.json`), and compliance evidence in S3-compatible buckets.
-- **OpenSearch Indexing**: Direct ingestion of finding events (`sentinel-findings`) for full-text search, threat hunting, and audit trails.
+### 🔒 Enterprise-Grade Security Architecture
+- **Unified Authentication**: JWT-based authentication bridging the Next.js frontend with the FastAPI backend, utilizing bcrypt for password hashing.
+- **Secure Job Execution**: Subprocess arguments are isolated and strictly parameterized, entirely eliminating RCE vulnerabilities.
+- **Postgres Persistence**: A single source of truth using PostgreSQL and SQLAlchemy models for complete data integrity across the platform.
 
-### 📊 Enterprise Observability Stack
-- **Prometheus**: System-wide metric scraping and performance monitoring.
-- **Grafana**: Pre-configured dashboards for real-time SOC metrics and system health.
-- **Loki & Promtail**: Centralized container log aggregation and stream analysis.
+### 📊 Observability & Audit Trails
+- **S3 Evidence Vault**: MinIO seamlessly archives raw scan logs, report artifacts, and compliance evidence.
+- **OpenSearch Indexing**: Direct ingestion of finding events for full-text search, threat hunting, and compliance auditing.
 
 ---
 
 ## 🏗️ System Architecture
 
-```
+Ironsight utilizes a modern microservice architecture, orchestrated by Docker Compose and routed via an Nginx API Gateway.
+
+```text
                                   +-----------------------+
                                   |     Web Clients       |
                                   +-----------+-----------+
@@ -56,57 +61,27 @@
             |                                 |                                 |
             v                                 v                                 v
 +-----------+-----------+         +-----------+-----------+         +-----------+-----------+
-|    Sentinel UI Hub    |         |    Aegis AI Frontend  |         |   Nexus Web Frontend  |
+|    Ironsight UI Hub    |         |    Aegis AI Frontend  |         |   Praxis Web Frontend  |
 |   Next.js (Port 3000) |         |     (Port 8080)       |         |   Vite (Port 5173)    |
 +-----------+-----------+         +-----------------------+         +-----------------------+
             |
             v
 +-----------+-----------+         +-----------------------+
-|   Sentinel FastAPI    |<------->|    Aegis AI Engine    |
+|   Ironsight FastAPI    |<------->|    Aegis AI Engine    |
 |       (Port 8000)     |         | FastAPI + Groq LLM    |
 +-----+-----+-----+-----+         | ChromaDB (Port 8090)  |
       |     |     |               +-----------------------+
-      |     |     +-----------------------------------+
-      |     v                                         |
-      |  +--+-------------------+                     |
-      |  |  Celery Task Worker  |                     |
-      |  |   & Beat Scheduler   |                     |
-      |  +--+-------------------+                     |
-      |     |                                         |
-      v     v                                         v
+      |     v     |
+      |  +--+-------------------+
+      |  |  Celery Task Worker  |
+      |  +--+-------------------+
+      |     |
+      v     v
 +-----+-----+-----+-----+---------------------+-------+-----+---------------------+
 |   PostgreSQL + PGVector |      Neo4j Graph    |    MinIO S3    |     OpenSearch    |
 |      (Port 5432)      |      (Port 7687)    |  (Port 9000)   |    (Port 9200)    |
 +-----------------------+---------------------+----------------+-------------------+
-                                                      ^
-                                                      | Metrics & Logs
-                                      +---------------+---------------+
-                                      | Prometheus, Grafana, Loki     |
-                                      +-------------------------------+
 ```
-
----
-
-## 🛠️ Microservice Directory & Port Mapping
-
-| Component | Container Name | Service Description | Port(s) |
-| :--- | :--- | :--- | :--- |
-| **Nginx Proxy** | `saga_proxy` | Central API Gateway & reverse proxy | `80:80` |
-| **Sentinel Hub** | `sentinel_frontend` | Main Next.js SOC Dashboard UI | `3000:3000` |
-| **Sentinel API** | `sentinel-api` | Core FastAPI backend & database manager | `8000:8000` |
-| **Aegis AI API** | `aegis_backend` | Groq RAG LLM remediation backend | `8090:8001` |
-| **Aegis UI** | `aegis_frontend` | Aegis AI web client | `8080:8080` |
-| **Nexus UI** | `nexus_frontend` | Interactive operations frontend | `5173:5173` |
-| **PostgreSQL** | `sentinel-postgres` | Relational & vector database (pgvector) | `5432:5432` |
-| **Neo4j** | `sentinel-neo4j` | Graph database for attack graph | `7474:7474`, `7687:7687` |
-| **Redis** | `sentinel-redis` | In-memory cache & Celery broker | `6379:6379` |
-| **MinIO** | `sentinel-minio` | S3 evidence & report artifact vault | `9000:9000`, `9001:9001` |
-| **OpenSearch** | `sentinel-opensearch` | Full-text finding search index | `9200:9200`, `9600:9600` |
-| **OpenSearch Dashboards** | `sentinel-opensearch-dashboards` | Visual search analytics interface | `5601:5601` |
-| **Prometheus** | `sentinel-prometheus` | Metrics collection engine | `9090:9090` |
-| **Grafana** | `sentinel-grafana` | Monitoring & telemetry dashboards | `3001:3000` |
-| **Loki** | `sentinel-loki` | Container log aggregation server | `3100:3100` |
-| **PgAdmin** | `sentinel-pgadmin` | Web GUI for PostgreSQL administration | `5050:80` |
 
 ---
 
@@ -114,12 +89,12 @@
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
-- [Groq API Key](https://console.groq.com/) *(for Aegis AI remediation synthesis)*
+- [Groq API Key](https://console.groq.com/) *(Required for Aegis AI remediation synthesis)*
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YourUsername/cyber-sentinel.git
-cd cyber-sentinel
+git clone https://github.com/YourUsername/cyber-ironsight.git
+cd cyber-ironsight
 ```
 
 ### 2. Configure Environment Variables
@@ -132,8 +107,8 @@ Edit `.env`:
 GROQ_API_KEY=your_groq_api_key_here
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_DB=sentinel_db
-NEO4J_AUTH=neo4j/sentinel_neo4j
+POSTGRES_DB=ironsight_db
+NEO4J_AUTH=neo4j/ironsight_neo4j
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
 ```
@@ -143,8 +118,7 @@ Start all microservices in detached mode:
 ```bash
 docker-compose up -d
 ```
-
-Check container status:
+Verify all containers are running successfully:
 ```bash
 docker-compose ps
 ```
@@ -155,66 +129,39 @@ docker-compose ps
 
 Once all services are healthy, access the platform components via:
 
-- **Sentinel AI Gateway**: [http://localhost](http://localhost)
-- **Sentinel SOC Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **Ironsight Gateway**: [http://localhost](http://localhost)
+- **Ironsight SOC Dashboard**: [http://localhost:3000](http://localhost:3000)
 - **FastAPI Documentation (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Aegis AI Interface**: [http://localhost:8080](http://localhost:8080)
-- **Grafana Dashboards**: [http://localhost:3001](http://localhost:3001) *(Default: `admin` / `sentinel`)*
-- **OpenSearch Dashboards**: [http://localhost:5601](http://localhost:5601)
-- **MinIO Console**: [http://localhost:9001](http://localhost:9001) *(Default: `minioadmin` / `minioadmin`)*
-- **Neo4j Browser**: [http://localhost:7474](http://localhost:7474) *(Default: `neo4j` / `sentinel_neo4j`)*
-- **PgAdmin**: [http://localhost:5050](http://localhost:5050) *(Default: `admin@sentinel.ai` / `admin`)*
-
----
-
-## 📁 Repository Structure
-
-```
-.
-├── backend/                  # FastAPI Core Backend
-│   ├── main.py               # REST API Endpoints & Neo4j graph driver
-│   ├── models.py             # SQLAlchemy DB schemas (Targets, Scans, Vulnerabilities)
-│   ├── worker.py             # Celery scan tasks & OpenSearch/MinIO integration
-│   ├── database.py           # Database engine & session setup
-│   └── alembic/              # Database migration scripts
-├── frontend/                 # Next.js 15 Sentinel SOC Dashboard
-│   ├── app/                  # App Router pages (Dashboard, Scans, Aegis, Reports)
-│   ├── public/               # Static assets & brand media
-│   └── package.json          # Node dependencies
-├── Saga-ai/                  # Aegis AI Microservice & Sub-applications
-│   ├── main.py               # FastAPI RAG backend with Groq LLM & ChromaDB
-│   ├── aegis_chroma_db/      # Persisted vector database store
-│   └── Mini-Mythos/frontend/ # Nexus Vite web app
-├── docker-compose.yml        # Multi-container orchestration specification
-├── nginx.conf                # Gateway routing & authentication proxy configuration
-├── prometheus.yml            # Prometheus metrics scraper configuration
-└── promtail-config.yml       # Promtail log shipping configuration
-```
+- **Neo4j Browser**: [http://localhost:7474](http://localhost:7474) *(Default: `neo4j` / `ironsight_neo4j`)*
+- **PgAdmin**: [http://localhost:5050](http://localhost:5050) *(Default: `admin@ironsight.ai` / `admin`)*
+- **Grafana Dashboards**: [http://localhost:3001](http://localhost:3001) *(Default: `admin` / `ironsight`)*
 
 ---
 
 ## 📡 Core API Reference
 
-### Targets
+The Ironsight backend is completely powered by a secure, JWT-authenticated FastAPI layer.
+
+### Authentication
+- `POST /login` — Exchange credentials for a JWT Bearer token.
+- `POST /register` — Provision a new user and organization.
+
+### Intelligence & Orchestration
+- `GET /analytics/` — Fetch aggregate telemetry across targets, active scans, and critical CVEs.
+- `POST /orchestrate` — Deploy an agentic swarm against a target to fulfill a specific security goal.
+
+### Targets & Scans
 - `POST /targets/?hostname={target}` — Register a new target for surveillance.
 - `GET /targets/` — List all registered targets.
-
-### Scans
-- `POST /scans/?target_id={id}` — Trigger an automated recon & scanning workflow.
-- `GET /scans/` — Fetch list of all active and completed scans.
-- `GET /scans/{scan_id}` — Get specific scan status and finding metrics.
-
-### Attack Graph
-- `GET /graph/` — Retrieve nodes and relationships formatted for graph visualization.
-
-### Aegis AI Remediation
-- `POST /analyze/` — Generate an AI remediation plan for a vulnerability finding (Aegis API at `:8090`).
+- `GET /scans/` — Fetch list of all active and completed scans with timeline data.
+- `GET /scans/{scan_id}` — Inspect specific scan findings and artifacts.
 
 ---
 
 ## ⚠️ Disclaimer & Ethical Use
 
-SentinelAI is intended strictly for authorized security auditing, defensive threat intelligence, and educational purposes. Ensure you have explicit authorization before adding targets or executing scans against any network or system.
+Ironsight is intended strictly for authorized security auditing, defensive threat intelligence, and educational purposes. **Ensure you have explicit authorization before adding targets or executing scans against any network or system.** The authors are not responsible for misuse of this tool.
 
 ---
 

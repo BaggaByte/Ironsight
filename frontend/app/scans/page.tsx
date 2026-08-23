@@ -24,25 +24,25 @@ function ScanRow({ scan, onClick }: { scan: Record<string, unknown>; onClick: ()
       onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-card-hover)")}
       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
     >
-      <td style={{ padding: "14px 20px", fontFamily: "monospace", fontSize: 11, color: "var(--text-muted)" }}>#{ scan.scan_id}</td>
-      <td style={{ padding: "14px 20px", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{scan.target || "—"}</td>
+      <td style={{ padding: "14px 20px", fontFamily: "monospace", fontSize: 11, color: "var(--text-muted)" }}>#{ scan.id}</td>
+      <td style={{ padding: "14px 20px", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{scan.target_hostname || "—"}</td>
       <td style={{ padding: "14px 20px" }}>
         <span style={{ background: "rgba(240,78,35,0.08)", color: "var(--accent-primary)", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, border: "1px solid rgba(240,78,35,0.2)" }}>
-          {scan.tool_used?.toUpperCase()}
+          {scan.tool_used ? String(scan.tool_used).toUpperCase() : "NMAP"}
         </span>
       </td>
-      <td style={{ padding: "14px 20px" }}><RiskBadge score={scan.risk_score} /></td>
+      <td style={{ padding: "14px 20px" }}><RiskBadge score={(scan.findings_count as number) > 0 ? "HIGH" : "LOW"} /></td>
       <td style={{ padding: "14px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {scan.status === "completed" && <CheckCircle size={13} color="var(--emerald)" />}
           {scan.status === "failed" && <XCircle size={13} color="var(--red)" />}
           {scan.status === "running" && <Activity size={13} color="var(--accent-primary)" />}
-          {scan.status === "queued" && <Clock size={13} color="var(--amber)" />}
+          {scan.status === "pending" && <Clock size={13} color="var(--amber)" />}
           <span style={{ fontSize: 12, textTransform: "capitalize", fontWeight: 600 }} className={`status-${scan.status}`}>{scan.status}</span>
         </div>
       </td>
       <td style={{ padding: "14px 20px", fontSize: 12, color: "var(--text-muted)" }}>
-        {scan.completed_at ? new Date(scan.completed_at).toLocaleString() : "—"}
+        {scan.end_time ? new Date(scan.end_time as string).toLocaleString() : "—"}
       </td>
       <td style={{ padding: "14px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--accent-primary)", fontSize: 12, fontWeight: 600 }}>
@@ -102,7 +102,7 @@ export default function ScansPage() {
               {!loading && scans.length === 0 && (
                 <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>No scans yet. Launch one from the Orchestrate page.</td></tr>
               )}
-              {scans.map(scan => <ScanRow key={scan.scan_id} scan={scan} onClick={() => router.push(`/scans/${scan.scan_id}`)} />)}
+              {scans.map(scan => <ScanRow key={scan.id as string} scan={scan} onClick={() => router.push(`/scans/${scan.id}`)} />)}
             </tbody>
           </table>
         </div>

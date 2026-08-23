@@ -32,11 +32,11 @@ const STATS = [
 // ── Platform Data ────────────────────────────────────────────────────────────
 const PLATFORMS = [
   {
-    id: "sentinel",
+    id: "ironsight",
     icon: Shield,
-    name: "Sentinel AI",
+    name: "Ironsight AI",
     tagline: "Autonomous Attack Surface Intelligence",
-    description: "Continuously maps your entire external attack surface using AI-driven reconnaissance. Sentinel autonomously enumerates subdomains, detects open ports, fingerprints services, and correlates findings against live CVE databases — without human intervention.",
+    description: "Continuously maps your entire external attack surface using AI-driven reconnaissance. Ironsight autonomously enumerates subdomains, detects open ports, fingerprints services, and correlates findings against live CVE databases — without human intervention.",
     accentColor: "#f04e23",
     glowColor: "rgba(240,78,35,0.15)",
     borderColor: "rgba(240,78,35,0.3)",
@@ -70,15 +70,15 @@ const PLATFORMS = [
     ],
   },
   {
-    id: "nexus",
+    id: "praxis",
     icon: Target,
-    name: "Nexus AI",
+    name: "Praxis GRC",
     tagline: "Enterprise GRC & Compliance Intelligence",
-    description: "Provides a unified governance, risk, and compliance command center. Nexus continuously monitors your posture against major regulatory frameworks, generates audit-ready reports, and provides board-level risk scoring powered by real-time threat data.",
+    description: "Provides a unified governance, risk, and compliance command center. Praxis continuously monitors your posture against major regulatory frameworks, generates audit-ready reports, and provides board-level risk scoring powered by real-time threat data.",
     accentColor: "#3b82f6",
     glowColor: "rgba(59,130,246,0.15)",
     borderColor: "rgba(59,130,246,0.3)",
-    href: "/nexus/",
+    href: "/praxis/",
     features: [
       { icon: BarChart2, label: "Multi-Framework Compliance Scoring" },
       { icon: FileSearch, label: "Automated Audit Trail Generation" },
@@ -239,19 +239,35 @@ export default function Home() {
   const [token, setToken] = useState<string | null>(null);
   const [statsVisible, setStatsVisible] = useState(false);
   const statsRef = useRef<HTMLDivElement>(null);
+  const [dynamicStats, setDynamicStats] = useState(STATS);
 
   useEffect(() => {
     const saved = Cookies.get("token");
     if (saved) setToken(saved);
     const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setStatsVisible(true); }, { threshold: 0.3 });
     if (statsRef.current) observer.observe(statsRef.current);
+    
+    if (saved) {
+      fetch("/api/analytics/", { headers: { "Authorization": `Bearer ${saved}` } })
+        .then(res => res.ok ? res.json() : Promise.reject())
+        .then(data => {
+          setDynamicStats([
+            { label: "Vulnerabilities Detected", value: data.criticalVulns || 0, suffix: "" },
+            { label: "Attack Surfaces Mapped", value: data.totalTargets || 0, suffix: "" },
+            { label: "Compliance Frameworks", value: 14, suffix: "" },
+            { label: "Mean Time to Remediate", value: 4, suffix: "hrs" },
+          ]);
+        })
+        .catch(() => {});
+    }
+
     return () => observer.disconnect();
   }, []);
 
-  const c0 = useCounter(STATS[0].value, 2200, statsVisible);
-  const c1 = useCounter(STATS[1].value, 2200, statsVisible);
-  const c2 = useCounter(STATS[2].value, 1800, statsVisible);
-  const c3 = useCounter(STATS[3].value, 1600, statsVisible);
+  const c0 = useCounter(dynamicStats[0].value, 2200, statsVisible);
+  const c1 = useCounter(dynamicStats[1].value, 2200, statsVisible);
+  const c2 = useCounter(dynamicStats[2].value, 1800, statsVisible);
+  const c3 = useCounter(dynamicStats[3].value, 1600, statsVisible);
   const counts = [c0, c1, c2, c3];
 
   const handleAuthSuccess = () => {
@@ -325,7 +341,7 @@ export default function Home() {
         </h1>
 
         <p style={{ fontSize: "18px", color: "#94a3b8", lineHeight: "1.7", maxWidth: "620px", marginBottom: "48px", fontWeight: "400" }}>
-          Sentinel, Aegis, and Nexus — three specialized AI engines working in concert to autonomously map attack surfaces, remediate vulnerabilities, and enforce compliance across your entire enterprise.
+          Ironsight, Aegis, and Praxis — three specialized AI engines working in concert to autonomously map attack surfaces, remediate vulnerabilities, and enforce compliance across your entire enterprise.
         </p>
 
         <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
@@ -347,7 +363,7 @@ export default function Home() {
       {/* ── Stats Bar ── */}
       <section ref={statsRef} style={{ position: "relative", zIndex: 1, borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(15,23,42,0.6)", backdropFilter: "blur(8px)", willChange: "transform, opacity" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 48px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-          {STATS.map((stat, i) => (
+          {dynamicStats.map((stat, i) => (
             <div key={i} style={{ padding: "36px 24px", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
               <div style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: "900", letterSpacing: "-1.5px", color: "#f8fafc", fontVariantNumeric: "tabular-nums" }}>
                 {counts[i].toLocaleString()}{stat.suffix}
@@ -514,3 +530,4 @@ export default function Home() {
     </div>
   );
 }
+

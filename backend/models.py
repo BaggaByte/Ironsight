@@ -4,6 +4,27 @@ import datetime
 import enum
 from database import Base
 
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    users = relationship("User", back_populates="organization")
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, default="user")
+    organization_id = Column(Integer, ForeignKey("organizations.id"))
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    organization = relationship("Organization", back_populates="users")
+
 class ScanStatus(enum.Enum):
     PENDING = "PENDING"
     RUNNING = "RUNNING"

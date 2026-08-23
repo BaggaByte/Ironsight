@@ -1,6 +1,6 @@
-# SentinelAI Deployment Guide
+# Ironsight Deployment Guide
 
-This guide covers deploying the SentinelAI stack using Docker Compose.
+This guide covers deploying the Ironsight stack using Docker Compose.
 
 ## Prerequisites
 - Docker Engine & Docker Compose
@@ -20,7 +20,7 @@ Create `.env` based on the provided template:
 ```env
 # Required core secrets
 SECRET_KEY=your_secure_hex_string
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sentinel_db
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ironsight_db
 REDIS_URL=redis://redis:6379/0
 
 # Optional integrations
@@ -34,7 +34,7 @@ DEFAULT_ADMIN_PASSWORD=your_secure_admin_password
 
 ## 2. Running the Stack
 
-To spin up the entire unified Sentinel platform (Postgres, Redis, Neo4j, MinIO, API, Worker, Next.js):
+To spin up the entire unified Ironsight platform (Postgres, Redis, Neo4j, MinIO, API, Worker, Next.js):
 ```bash
 docker-compose up -d
 ```
@@ -47,7 +47,7 @@ docker-compose up -d
 ## 3. Production Hardening Notes
 
 - **CORS**: By default, `backend/main.py` restricts CORS to specific frontend origins (e.g., `localhost:3000`). If deploying to a remote server, update `allow_origins` to match your domain.
-- **Resource Limits**: Memory (1GB) and CPU limits (1 core) are applied to the `sentinel-frontend` by default to prevent runaway Next.js dev server builds.
+- **Resource Limits**: Memory (1GB) and CPU limits (1 core) are applied to the `ironsight-frontend` by default to prevent runaway Next.js dev server builds.
 - **Observability Stack**: `grafana`, `pgadmin`, and `opensearch-dashboards` have been secured with generic credentials in `docker-compose.yml`. In a real production scenario, these should be moved to `.env` variables or hidden behind a proxy (like Nginx) entirely.
 
 ## 4. Git History 

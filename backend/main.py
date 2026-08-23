@@ -5,11 +5,24 @@ from typing import List, Optional
 from pydantic import BaseModel
 import database
 import models
+import auth
 from worker import run_recon_scan
 
-app = FastAPI(title="Sentinel API")
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
-# CORS: allow Next.js frontend on port 3000 and Nexus frontend on port 5173
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    org_name: str
+    first_name: str
+    last_name: str
+    job_title: str
+
+app = FastAPI(title="Ironsight API")
+
+# CORS: allow Next.js frontend on port 3000 and Praxis frontend on port 5173
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -38,12 +51,81 @@ class ScanResponse(BaseModel):
     scan_id: int
     status: str
 
+class OrchestrateRequest(BaseModel):
+    goal: str
+    target: str
+
+@app.post("/register")
+def register(body: RegisterRequest, db: Session = Depends(database.get_db)):
+    if db.query(models.User).filter(models.User.email == body.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    org = db.query(models.Organization).filter(models.Organization.name == body.org_name).first()
+    if not org:
+        org = models.Organization(name=body.org_name)
+        db.add(org)
+        db.commit()
+        db.refresh(org)
+    
+    new_user = models.User(
+        email=body.email,
+        hashed_password=auth.get_password_hash(body.password),
+        organization_id=org.id,
+        role="admin"
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "User created successfully"}
+
+@app.post("/login")
+def login(body: LoginRequest, db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.email == body.email).first()
+    if not user or not auth.verify_password(body.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    token = auth.create_access_token({"id": user.id, "email": user.email, "role": user.role})
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {"id": user.id, "email": user.email, "role": user.role}
+    }
+
+@app.post("/orchestrate")
+def orchestrate(body: OrchestrateRequest, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
+    import uuid
+    target = db.query(models.Target).filter(models.Target.hostname == body.target).first()
+    if not target:
+        target = models.Target(hostname=body.target)
+        db.add(target)
+        db.commit()
+        db.refresh(target)
+    
+    db_scan = models.Scan(target_id=target.id, status=models.ScanStatus.PENDING)
+    db.add(db_scan)
+    db.commit()
+    db.refresh(db_scan)
+    
+    run_recon_scan.delay(db_scan.id, target.hostname)
+    
+    return {
+        "mission_id": str(uuid.uuid4())[:8],
+        "planner_reasoning": f"Analyzed goal: '{body.goal}'. Identified safe scan path for target {body.target}.",
+        "tasks_dispatched": 1,
+        "scans": [{
+            "scan_id": str(db_scan.id),
+            "tool": "nmap",
+            "target": target.hostname,
+            "status": "pending"
+        }]
+    }
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
 @app.post("/targets/", response_model=TargetResponse, status_code=201)
-def create_target(body: TargetCreate, db: Session = Depends(database.get_db)):
+def create_target(body: TargetCreate, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
     existing = db.query(models.Target).filter(models.Target.hostname == body.hostname).first()
     if existing:
         raise HTTPException(status_code=409, detail="Target already exists")
@@ -54,12 +136,12 @@ def create_target(body: TargetCreate, db: Session = Depends(database.get_db)):
     return {"id": db_target.id, "hostname": db_target.hostname}
 
 @app.get("/targets/", response_model=List[dict])
-def read_targets(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
+def read_targets(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
     targets = db.query(models.Target).offset(skip).limit(limit).all()
     return [{"id": t.id, "hostname": t.hostname} for t in targets]
 
 @app.post("/scans/", response_model=ScanResponse, status_code=202)
-def trigger_scan(body: ScanCreate, db: Session = Depends(database.get_db)):
+def trigger_scan(body: ScanCreate, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
     target = db.query(models.Target).filter(models.Target.id == body.target_id).first()
     if not target:
         raise HTTPException(status_code=404, detail="Target not found")
@@ -75,17 +157,20 @@ def trigger_scan(body: ScanCreate, db: Session = Depends(database.get_db)):
     return {"scan_id": db_scan.id, "status": db_scan.status.value}
 
 @app.get("/scans/", response_model=List[dict])
-def list_scans(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
+def list_scans(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
     scans = db.query(models.Scan).offset(skip).limit(limit).all()
     return [{
         "id": scan.id, 
         "target_id": scan.target_id, 
+        "target_hostname": scan.target.hostname if scan.target else "Unknown",
+        "start_time": scan.start_time.isoformat() if scan.start_time else None,
+        "end_time": scan.end_time.isoformat() if scan.end_time else None,
         "status": scan.status.value,
         "findings_count": len(scan.findings)
     } for scan in scans]
 
 @app.get("/scans/{scan_id}")
-def get_scan(scan_id: int, db: Session = Depends(database.get_db)):
+def get_scan(scan_id: int, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
     scan = db.query(models.Scan).filter(models.Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
@@ -110,7 +195,7 @@ except Exception as e:
     neo4j_driver = None
 
 @app.get("/graph/")
-def get_graph_data():
+def get_graph_data(user: dict = Depends(auth.get_current_user)):
     if not neo4j_driver:
         return {"nodes": [], "links": []}
         
@@ -173,7 +258,7 @@ def get_graph_data():
         return {"nodes": [], "links": []}
 
 @app.get("/analytics/")
-def get_analytics(db: Session = Depends(database.get_db)):
+def get_analytics(db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
     """Returns aggregate metrics for the SOC dashboard."""
     import models
     total_targets = db.query(models.Target).count()
@@ -195,7 +280,7 @@ def get_analytics(db: Session = Depends(database.get_db)):
     }
 
 @app.get("/reports/{scan_id}")
-def get_grc_report(scan_id: int):
+def get_grc_report(scan_id: int, user: dict = Depends(auth.get_current_user)):
     """
     Generate a GRC-style compliance report for a given scan.
     """

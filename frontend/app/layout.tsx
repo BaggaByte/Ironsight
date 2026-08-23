@@ -4,13 +4,13 @@ import { Providers } from "./Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SentinelAI — Autonomous Cybersecurity Platform",
+  title: "Ironsight — Autonomous Cybersecurity Platform",
   description: "AI-powered attack surface mapping, vulnerability scanning, and autonomous threat response.",
   openGraph: {
-    title: "SentinelAI",
+    title: "Ironsight",
     description: "Autonomous Cybersecurity Platform",
-    url: "https://sentinel.ai",
-    siteName: "SentinelAI",
+    url: "https://ironsight.ai",
+    siteName: "Ironsight",
     type: "website",
   },
   icons: {

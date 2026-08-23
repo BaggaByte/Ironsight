@@ -193,7 +193,7 @@ export default function SettingsPage() {
 
         {/* Notifications */}
         <div className="animate-slide-up delay-200">
-          <SettingSection title="Alerts & Notifications" description="Configure where SentinelAI sends security alerts" icon={Bell}>
+          <SettingSection title="Alerts & Notifications" description="Configure where Ironsight sends security alerts" icon={Bell}>
             <FormRow label="Slack Webhook" hint="Receive critical vulnerability alerts in Slack">
               <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Enable Slack</span>
@@ -252,7 +252,7 @@ export default function SettingsPage() {
         {/* API Key */}
         <div className="animate-slide-up delay-300">
           <SettingSection title="API Access" description="Your API key for programmatic access and CI/CD integration" icon={Key}>
-            <FormRow label="API Key" hint="Use this key to authenticate with the SentinelAI REST API from your pipeline or scripts">
+            <FormRow label="API Key" hint="Use this key to authenticate with the Ironsight REST API from your pipeline or scripts">
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <input
                   className="input-glass"
@@ -287,10 +287,10 @@ export default function SettingsPage() {
 
         {/* Platform Info */}
         <div className="animate-slide-up delay-400">
-          <SettingSection title="Platform Information" description="SentinelAI version and component status" icon={Cpu}>
+          <SettingSection title="Platform Information" description="Ironsight version and component status" icon={Cpu}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[
-                { label: "Platform", value: "SentinelAI Enterprise v1.0" },
+                { label: "Platform", value: "Ironsight Enterprise v1.0" },
                 { label: "Backend", value: "FastAPI + Celery + LangGraph" },
                 { label: "AI Engine", value: "Ollama / Llama 3.1-8b + CrewAI" },
                 { label: "Database", value: "PostgreSQL + PGVector + Neo4j" },
@@ -328,3 +328,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

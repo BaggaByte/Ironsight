@@ -4,7 +4,7 @@ import Cookies from "js-cookie";
 import { FileCheck, Download } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 
-export default function NexusPage() {
+export default function PraxisPage() {
   const [token, setToken] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -35,7 +35,7 @@ export default function NexusPage() {
               <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(14,165,233,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <FileCheck size={22} color="#0ea5e9" />
               </div>
-              <h1 style={{ fontSize: 28, fontWeight: 800 }}>Nexus AI <span className="text-gradient">GRC &amp; ISO 27001</span></h1>
+              <h1 style={{ fontSize: 28, fontWeight: 800 }}>Praxis AI <span className="text-gradient">GRC &amp; ISO 27001</span></h1>
             </div>
             <p style={{ color: "var(--text-secondary)", marginTop: 6, fontSize: 14 }}>
               Autonomous compliance tracking, policy auditing, and GRC reporting
@@ -100,3 +100,4 @@ export default function NexusPage() {
     </div>
   );
 }
+

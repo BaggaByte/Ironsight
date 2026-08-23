@@ -23,7 +23,7 @@ def create_default():
 
     db = SessionLocal()
     org_name = "Default Org"
-    email = "admin@sentinel.ai"
+    email = "admin@ironsight.ai"
 
     try:
         org = db.query(Organization).filter(Organization.name == org_name).first()

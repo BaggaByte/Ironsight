@@ -1,18 +1,26 @@
 "use client";
 
 import useSWR from "swr";
+import Cookies from "js-cookie";
 import { AlertCircle, Activity, ServerCrash } from "lucide-react";
 // Import your Recharts/react-simple-maps components here
 // import { AttackGraphAreaChart } from "@/components/charts"; 
 
 // A lightweight generic fetcher for SWR
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url, {
+  headers: {
+    "Authorization": `Bearer ${Cookies.get("token")}`
+  }
+}).then((res) => {
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+});
 
 export default function SOCDashboard() {
   // SWR automatically handles caching, retries, and background refetching
   // Polling every 5 seconds (5000ms) to keep SOC metrics live
   const { data: metrics, error, isLoading } = useSWR(
-    "http://localhost:8000/api/v1/metrics/live", 
+    "/api/analytics/", 
     fetcher,
     { refreshInterval: 5000 }
   );
@@ -30,7 +38,7 @@ export default function SOCDashboard() {
     return (
       <div className="flex h-screen items-center justify-center text-emerald-500 bg-gray-950 animate-pulse">
         <Activity className="mr-2" />
-        <span>Initializing SentinelAI SOC Dashboard...</span>
+        <span>Initializing Ironsight SOC Dashboard...</span>
       </div>
     );
   }
@@ -39,7 +47,7 @@ export default function SOCDashboard() {
     <main className="min-h-screen bg-gray-950 text-gray-100 p-6">
       <header className="mb-8 flex items-center justify-between border-b border-gray-800 pb-4">
         <h1 className="text-2xl font-bold tracking-tight text-emerald-400">
-          SentinelAI Command Center
+          Ironsight Command Center
         </h1>
         {metrics?.activeScans > 0 && (
           <span className="flex items-center text-amber-400 text-sm font-mono animate-pulse">
@@ -73,3 +81,4 @@ function MetricCard({ title, value, alert = false }: { title: string; value: num
     </div>
   );
 }
+

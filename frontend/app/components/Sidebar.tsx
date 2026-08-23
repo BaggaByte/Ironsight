@@ -19,7 +19,7 @@ const NAV = [
   { href: "/schedule",    label: "Scheduling",     icon: Calendar },
   { href: "/orchestrate", label: "AI Orchestrate", icon: BrainCircuit },
   { href: "/aegis",       label: "Aegis SAST",      icon: Shield },
-  { href: "/nexus",       label: "Nexus GRC",       icon: Activity },
+  { href: "/nexus",       label: "Praxis GRC",       icon: Activity },
   { href: "/chat",        label: "AI Copilot",     icon: MessageSquare },
   { href: "/reports",     label: "Reports",        icon: BarChart2 },
   { href: "/settings",    label: "Settings",       icon: Settings },
@@ -88,7 +88,7 @@ export default function Sidebar() {
               fontWeight: 800, fontSize: 15, letterSpacing: "-0.03em",
               color: "#f8fafc",
             }}>
-              Sentinel<span style={{ color: "var(--accent-primary)" }}>AI</span>
+              Ironsight<span style={{ color: "var(--accent-primary)" }}>AI</span>
             </div>
             <div style={{ fontSize: 9, color: "#475569", marginTop: 1, letterSpacing: "1.5px", textTransform: "uppercase" }}>
               Enterprise SecOps
@@ -243,3 +243,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+
