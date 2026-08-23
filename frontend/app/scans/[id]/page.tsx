@@ -306,7 +306,7 @@ export default function ScanDetailPage() {
           {tabs.map(({ id, label, icon: Icon }: { id: string; label: string; icon: React.ElementType }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id)}
+              onClick={() => setActiveTab(id as any)}
               style={{
                 display: "flex", alignItems: "center", gap: 7,
                 padding: "8px 16px", borderRadius: 8, cursor: "pointer",
@@ -422,7 +422,8 @@ export default function ScanDetailPage() {
                           Certificate Issues
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          {certVulns.map((v: Record<string, unknown>, i: number) => {
+                          {certVulns.map((v_raw: Record<string, unknown>, i: number) => {
+                            const v = v_raw as any;
                             const sColor = v.severity === "CRITICAL" ? "var(--red)" : v.severity === "HIGH" ? "var(--amber)" : "var(--accent-primary)";
                             return (
                               <div key={i} style={{ padding: "10px 14px", borderRadius: 8, background: `${sColor}08`, border: `1px solid ${sColor}25`, display: "flex", gap: 12, alignItems: "flex-start" }}>

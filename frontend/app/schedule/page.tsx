@@ -146,7 +146,7 @@ export default function SchedulePage() {
                    No scheduled scans yet
                  </div>
                ) : (
-                 schedules.map(s => (
+                 schedules.map((s: any) => (
                    <div key={s.id} className="glass-panel hover-lift" style={{
                      padding: "20px", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center"
                    }}>

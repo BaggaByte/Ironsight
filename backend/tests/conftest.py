@@ -10,6 +10,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ["TESTING"] = "1"
+os.environ["SECRET_KEY"] = "testsecretkey"
 
 from main import app
 from database import Base, get_db
@@ -39,7 +40,14 @@ def client(db_session):
         yield db_session
             
     app.dependency_overrides[get_db] = override_get_db
+    
+    from auth import get_current_user
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "email": "admin@ironsight.ai", "role": "admin"}
+    
     with TestClient(app) as c:
+        from auth import create_access_token
+        token = create_access_token({"sub": "admin@ironsight.ai", "role": "admin"})
+        c.headers.update({"Authorization": f"Bearer {token}"})
         yield c
     app.dependency_overrides.clear()
 

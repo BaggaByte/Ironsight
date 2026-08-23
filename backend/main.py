@@ -120,6 +120,63 @@ def orchestrate(body: OrchestrateRequest, db: Session = Depends(database.get_db)
         }]
     }
 
+@app.get("/me")
+def get_me(user: dict = Depends(auth.get_current_user)):
+    return user
+
+@app.get("/dashboard/summary")
+def get_dashboard_summary(db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
+    import models
+    total_targets = db.query(models.Target).count()
+    total_scans = db.query(models.Scan).count()
+    completed = db.query(models.Scan).filter(models.Scan.status == models.ScanStatus.COMPLETED).count()
+    failed = db.query(models.Scan).filter(models.Scan.status == models.ScanStatus.FAILED).count()
+    critical = db.query(models.Finding).join(models.Vulnerability).filter(models.Vulnerability.severity == "CRITICAL").count()
+    return {
+        "total_assets": total_targets,
+        "total_scans": total_scans,
+        "completed_scans": completed,
+        "failed_scans": failed,
+        "risk_breakdown": {"CRITICAL": critical, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    }
+
+class ReconRequest(BaseModel):
+    target: str
+    tool: str
+
+@app.post("/recon")
+def trigger_recon(body: ReconRequest, db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
+    import uuid
+    target = db.query(models.Target).filter(models.Target.hostname == body.target).first()
+    if not target:
+        target = models.Target(hostname=body.target)
+        db.add(target)
+        db.commit()
+        db.refresh(target)
+    db_scan = models.Scan(target_id=target.id, status=models.ScanStatus.PENDING)
+    db.add(db_scan)
+    db.commit()
+    db.refresh(db_scan)
+    run_recon_scan.delay(db_scan.id, target.hostname)
+    return {"scan_id": str(db_scan.id)}
+
+@app.get("/assets")
+def get_assets(db: Session = Depends(database.get_db), user: dict = Depends(auth.get_current_user)):
+    targets = db.query(models.Target).all()
+    return [{"asset_id": str(t.id), "target": t.hostname, "asset_type": "hostname", "scan_count": len(t.scans)} for t in targets]
+
+@app.get("/missions")
+def get_missions(user: dict = Depends(auth.get_current_user)):
+    return []
+
+@app.get("/scans/schedule")
+def get_schedule(user: dict = Depends(auth.get_current_user)):
+    return []
+
+@app.get("/reports/summary")
+def get_reports_summary(user: dict = Depends(auth.get_current_user)):
+    return {"daily_trend": []}
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}

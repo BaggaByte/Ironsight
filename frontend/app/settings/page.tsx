@@ -83,7 +83,7 @@ interface NotifsState {
 
 export default function SettingsPage() {
   const token = Cookies.get("token");
-  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
   // Notification settings (stored locally for now)

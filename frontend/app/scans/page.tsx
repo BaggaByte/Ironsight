@@ -18,7 +18,7 @@ function RiskBadge({ score }: { score: string | null }) {
 }
 
 
-function ScanRow({ scan, onClick }: { scan: Record<string, unknown>; onClick: () => void }) {
+function ScanRow({ scan, onClick }: { scan: any; onClick: () => void }) {
   return (
     <tr onClick={onClick} style={{ cursor: "pointer", borderTop: "1px solid var(--border)" }}
       onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-card-hover)")}
